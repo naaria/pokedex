@@ -1,20 +1,6 @@
 // =========================================================
-// Laboratorio 09 — JavaScript moderno y render dinámico
+// Laboratorio 10 — Tu Pokédex, ahora desde la web
 // =========================================================
-
-const pokemonLocal = [
-  { nombre: "bulbasaur",  imagen: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png",  tipos: ["grass", "poison"] },
-  { nombre: "charmander", imagen: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png",  tipos: ["fire"] },
-  { nombre: "squirtle",   imagen: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png",  tipos: ["water"] },
-  { nombre: "pikachu",    imagen: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png", tipos: ["electric"] },
-  { nombre: "jigglypuff", imagen: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/39.png", tipos: ["normal", "fairy"] },
-  { nombre: "gengar",     imagen: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/94.png",  tipos: ["ghost", "poison"] }
-];
-
-// Logro 2: agrega un Pokémon SIN mutar el array original (spread).
-// A propósito no tiene imagen: así se ve funcionando el respaldo de ??.
-const nuevo = { nombre: "missingno", tipos: ["normal"] };
-const ampliada = [...pokemonLocal, nuevo];
 
 // Logro 1: color de cada badge según el tipo
 const coloresTipo = {
@@ -60,13 +46,45 @@ function render(lista) {
   });
 }
 
-render(ampliada);   // ¡píntalo!
+// Traduce la estructura de la API a la forma limpia que espera crearTarjeta
+function adaptarPokemon(data) {
+  return {
+    nombre: data.name,
+    imagen: data.sprites?.front_default ?? "https://via.placeholder.com/96?text=?",
+    tipos:  data.types.map(t => t.type.name)   // [{type:{name:"electric"}}] → ["electric"]
+  };
+}
 
-// HU4: filtrar en vivo → el MISMO render, con datos distintos
+const nombres = ["bulbasaur", "charmander", "squirtle", "pikachu", "jigglypuff", "gengar"];
+let pokedex = [];   // aquí guardamos la rejilla cargada
+
 const buscador = document.getElementById("buscador");
 
+// Mismo buscador de C09: solo cambia la fuente (antes pokemonLocal, ahora pokedex)
 buscador.addEventListener("input", function () {
   const texto = buscador.value.toLowerCase();
-  const filtrados = ampliada.filter(p => p.nombre.includes(texto));
+  const filtrados = pokedex.filter(p => p.nombre.includes(texto));
   render(filtrados);
 });
+
+// Logro 1: spinner animado mientras llegan los datos
+contenedor.innerHTML = `
+  <div class="col-span-full flex flex-col items-center gap-3 py-8 text-slate-500" role="status">
+    <div class="h-10 w-10 animate-spin rounded-full border-4 border-slate-300 border-t-yellow-400"></div>
+    <p>Cargando…</p>
+  </div>
+`;
+
+// un fetch por cada nombre → un array de promesas
+const promesas = nombres.map(function (nombre) {
+  return fetch(`https://pokeapi.co/api/v2/pokemon/${nombre}`).then(r => r.json());
+});
+
+Promise.all(promesas)
+  .then(function (datos) {                 // datos = array con los 6 Pokémon crudos
+    pokedex = datos.map(adaptarPokemon);   // adapta todos a tu forma limpia
+    render(pokedex);
+  })
+  .catch(function () {
+    contenedor.innerHTML = `<p class="col-span-full text-center text-red-600">No se pudo cargar la Pokédex.</p>`;
+  });
