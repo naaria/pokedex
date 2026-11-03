@@ -46,18 +46,22 @@ function render(lista) {
   });
 }
 
-// HU2: traer un Pokémon de la API
+// Traduce la estructura de la API a la forma limpia que espera crearTarjeta
+function adaptarPokemon(data) {
+  return {
+    nombre: data.name,
+    imagen: data.sprites?.front_default ?? "https://via.placeholder.com/96?text=?",
+    tipos:  data.types.map(t => t.type.name)   // [{type:{name:"electric"}}] → ["electric"]
+  };
+}
+
 contenedor.innerHTML = `<p class="col-span-full text-center text-slate-500">Cargando…</p>`;
 
 fetch("https://pokeapi.co/api/v2/pokemon/pikachu")
-  .then(function (response) {
-    return response.json();   // convierte el JSON en objeto JS (también tarda → otra promesa)
-  })
+  .then(function (response) { return response.json(); })
   .then(function (data) {
-    console.log(data);        // los datos reales de la API (estructura anidada)
+    render([adaptarPokemon(data)]);   // adapta y reusa el render de C09 (espera una lista)
   })
   .catch(function () {
     contenedor.innerHTML = `<p class="col-span-full text-center text-red-600">No se pudo cargar.</p>`;
   });
-
-console.log("sigo trabajando");   // se imprime ANTES que los datos
