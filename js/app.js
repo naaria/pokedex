@@ -55,13 +55,30 @@ function adaptarPokemon(data) {
   };
 }
 
+const nombres = ["bulbasaur", "charmander", "squirtle", "pikachu", "jigglypuff", "gengar"];
+let pokedex = [];   // aquí guardamos la rejilla cargada
+
+const buscador = document.getElementById("buscador");
+
+// Mismo buscador de C09: solo cambia la fuente (antes pokemonLocal, ahora pokedex)
+buscador.addEventListener("input", function () {
+  const texto = buscador.value.toLowerCase();
+  const filtrados = pokedex.filter(p => p.nombre.includes(texto));
+  render(filtrados);
+});
+
 contenedor.innerHTML = `<p class="col-span-full text-center text-slate-500">Cargando…</p>`;
 
-fetch("https://pokeapi.co/api/v2/pokemon/pikachu")
-  .then(function (response) { return response.json(); })
-  .then(function (data) {
-    render([adaptarPokemon(data)]);   // adapta y reusa el render de C09 (espera una lista)
+// un fetch por cada nombre → un array de promesas
+const promesas = nombres.map(function (nombre) {
+  return fetch(`https://pokeapi.co/api/v2/pokemon/${nombre}`).then(r => r.json());
+});
+
+Promise.all(promesas)
+  .then(function (datos) {                 // datos = array con los 6 Pokémon crudos
+    pokedex = datos.map(adaptarPokemon);   // adapta todos a tu forma limpia
+    render(pokedex);
   })
   .catch(function () {
-    contenedor.innerHTML = `<p class="col-span-full text-center text-red-600">No se pudo cargar.</p>`;
+    contenedor.innerHTML = `<p class="col-span-full text-center text-red-600">No se pudo cargar la Pokédex.</p>`;
   });
