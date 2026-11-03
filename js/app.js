@@ -58,13 +58,7 @@ function adaptarPokemon(data) {
 let pokedex = [];   // aquí guardamos la rejilla cargada
 
 const buscador = document.getElementById("buscador");
-
-// Mismo buscador de C09: solo cambia la fuente (antes pokemonLocal, ahora pokedex)
-buscador.addEventListener("input", function () {
-  const texto = buscador.value.toLowerCase();
-  const filtrados = pokedex.filter(p => p.nombre.includes(texto));
-  render(filtrados);
-});
+const boton = document.getElementById("btn-buscar");
 
 // Logro 1: spinner animado mientras llegan los datos
 contenedor.innerHTML = `
@@ -87,3 +81,30 @@ async function cargarPokedex() {
 }
 
 cargarPokedex();
+
+// HU2: buscar y traer un Pokémon de la API
+async function buscarPokemon(nombre) {
+  const data = await obtenerPokemon(nombre.toLowerCase());   // reusa obtenerPokemon de HU1
+  return adaptarPokemon(data);
+}
+
+// muestra la tarjeta del Pokémon encontrado
+function mostrarResultado(pokemon) {
+  contenedor.innerHTML = "";
+  contenedor.appendChild(crearTarjeta(pokemon));
+}
+
+async function mostrarBusqueda(nombre) {
+  const pokemon = await buscarPokemon(nombre);
+  mostrarResultado(pokemon);
+}
+
+boton.addEventListener("click", function () {
+  const nombre = buscador.value.trim();
+  if (nombre !== "") mostrarBusqueda(nombre);
+});
+
+// Buscar también con Enter
+buscador.addEventListener("keydown", function (event) {
+  if (event.key === "Enter") boton.click();
+});

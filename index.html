@@ -9,10 +9,13 @@
 <body class="bg-slate-100 min-h-screen p-6">
   <h1 class="text-3xl font-bold text-center text-slate-800 mb-6">Pokédex</h1>
 
-  <div class="max-w-md mx-auto mb-6">
-    <label for="buscador" class="sr-only">Filtrar por nombre</label>
-    <input id="buscador" type="text" placeholder="Filtra por nombre…"
-           class="w-full p-2 rounded-lg border border-slate-300">
+  <div class="max-w-md mx-auto flex gap-2 mb-6">
+    <label for="buscador" class="sr-only">Buscar un Pokémon</label>
+    <input id="buscador" type="text" placeholder="Busca un Pokémon (ej. charizard)"
+           class="flex-1 p-2 rounded-lg border border-slate-300">
+    <button id="btn-buscar" class="px-4 py-2 bg-yellow-400 font-semibold rounded-lg hover:bg-yellow-500">
+      Buscar
+    </button>
   </div>
 
   <!-- Aquí el JS pintará las tarjetas. Empieza vacío. -->
