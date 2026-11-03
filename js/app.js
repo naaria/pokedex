@@ -51,7 +51,9 @@ function adaptarPokemon(data) {
   return {
     nombre: data.name,
     imagen: data.sprites?.front_default ?? "https://via.placeholder.com/96?text=?",
-    tipos:  data.types.map(t => t.type.name)   // [{type:{name:"electric"}}] → ["electric"]
+    tipos:  data.types.map(t => t.type.name),   // [{type:{name:"electric"}}] → ["electric"]
+    stats:  data.stats.map(s => ({ nombre: s.stat.name, valor: s.base_stat }))
+    // data.stats = [{ base_stat: 35, stat: { name: "hp" } }, ...]
   };
 }
 
@@ -100,6 +102,14 @@ function capturar(pokemon) {
 // muestra la tarjeta del Pokémon encontrado
 function mostrarResultado(pokemon) {
   const tarjeta = crearTarjeta(pokemon);            // la tarjeta de C09 (un nodo)
+
+  // HU4: estadísticas (solo en el resultado de búsqueda)
+  const stats = document.createElement("div");
+  stats.className = "mt-2 text-left text-xs space-y-1";
+  stats.innerHTML = pokemon.stats.map(s => `
+    <div class="flex justify-between"><span class="capitalize">${s.nombre}</span><span class="font-semibold">${s.valor}</span></div>
+  `).join("");
+  tarjeta.appendChild(stats);
 
   const boton = document.createElement("button");
   boton.textContent = "⚡ Capturar";
