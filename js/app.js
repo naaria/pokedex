@@ -38,10 +38,24 @@ function crearTarjeta(pokemon) {
   return articulo;
 }
 
+// Logro 2: botón para sacar un Pokémon de la colección
+function crearBotonQuitar(pokemon) {
+  const boton = document.createElement("button");
+  boton.textContent = "Quitar";
+  boton.setAttribute("aria-label", `Quitar a ${pokemon.nombre}`);
+  boton.className = "mt-2 text-xs text-slate-500 underline hover:text-red-600";
+  boton.addEventListener("click", function () {
+    pokedex = pokedex.filter(p => p.nombre !== pokemon.nombre);
+    render(pokedex);
+  });
+  return boton;
+}
+
 function render(lista) {
   contenedor.innerHTML = "";                 // 1. limpia lo anterior
   lista.forEach(function (pokemon) {
     const tarjeta = crearTarjeta(pokemon);   // 2. crea el nodo
+    tarjeta.appendChild(crearBotonQuitar(pokemon));   // Logro 2 (solo en la rejilla)
     contenedor.appendChild(tarjeta);         // 3. lo inserta en el DOM
   });
 }
