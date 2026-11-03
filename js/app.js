@@ -85,6 +85,7 @@ async function cargarPokedex() {
 cargarPokedex();
 
 // HU2: buscar y traer un Pokémon de la API
+// Logro 1: la API también acepta números (/pokemon/25), así que sirve el mismo código
 async function buscarPokemon(nombre) {
   const data = await obtenerPokemon(nombre.toLowerCase());   // reusa obtenerPokemon de HU1
   return adaptarPokemon(data);
