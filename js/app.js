@@ -1,5 +1,5 @@
 // =========================================================
-// Laboratorio 10 — Tu Pokédex, ahora desde la web
+// Laboratorio 11 — async/await y búsqueda en la API
 // =========================================================
 
 // Logro 1: color de cada badge según el tipo
@@ -55,7 +55,6 @@ function adaptarPokemon(data) {
   };
 }
 
-const nombres = ["bulbasaur", "charmander", "squirtle", "pikachu", "jigglypuff", "gengar"];
 let pokedex = [];   // aquí guardamos la rejilla cargada
 
 const buscador = document.getElementById("buscador");
@@ -75,16 +74,16 @@ contenedor.innerHTML = `
   </div>
 `;
 
-// un fetch por cada nombre → un array de promesas
-const promesas = nombres.map(function (nombre) {
-  return fetch(`https://pokeapi.co/api/v2/pokemon/${nombre}`).then(r => r.json());
-});
+async function obtenerPokemon(idONombre) {
+  const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${idONombre}`);
+  return response.json();
+}
 
-Promise.all(promesas)
-  .then(function (datos) {                 // datos = array con los 6 Pokémon crudos
-    pokedex = datos.map(adaptarPokemon);   // adapta todos a tu forma limpia
-    render(pokedex);
-  })
-  .catch(function () {
-    contenedor.innerHTML = `<p class="col-span-full text-center text-red-600">No se pudo cargar la Pokédex.</p>`;
-  });
+async function cargarPokedex() {
+  const nombres = ["bulbasaur", "charmander", "squirtle", "pikachu", "jigglypuff", "gengar"];
+  const datos = await Promise.all(nombres.map(obtenerPokemon));   // varios en paralelo, con await
+  pokedex = datos.map(adaptarPokemon);
+  render(pokedex);
+}
+
+cargarPokedex();
