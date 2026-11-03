@@ -67,7 +67,13 @@ buscador.addEventListener("input", function () {
   render(filtrados);
 });
 
-contenedor.innerHTML = `<p class="col-span-full text-center text-slate-500">Cargando…</p>`;
+// Logro 1: spinner animado mientras llegan los datos
+contenedor.innerHTML = `
+  <div class="col-span-full flex flex-col items-center gap-3 py-8 text-slate-500" role="status">
+    <div class="h-10 w-10 animate-spin rounded-full border-4 border-slate-300 border-t-yellow-400"></div>
+    <p>Cargando…</p>
+  </div>
+`;
 
 // un fetch por cada nombre → un array de promesas
 const promesas = nombres.map(function (nombre) {
