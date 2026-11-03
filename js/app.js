@@ -135,3 +135,28 @@ boton.addEventListener("click", function () {
 buscador.addEventListener("keydown", function (event) {
   if (event.key === "Enter") boton.click();
 });
+
+// HU5: paginación con parámetros de consulta
+let offset = 0;   // desde qué Pokémon empezamos
+
+async function cargarMas() {
+  // ?limit (cuántos) y ?offset (desde dónde) = parámetros de consulta
+  const respuesta = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=12&offset=${offset}`);
+  const lista = await respuesta.json();   // { results: [{ name, url }, ...] }
+
+  // cada item trae solo name + url → pide el detalle de cada uno en paralelo
+  const datos = await Promise.all(
+    lista.results.map(item => fetch(item.url).then(r => r.json()))
+  );
+
+  datos.map(adaptarPokemon).forEach(function (pokemon) {
+    if (!pokedex.some(p => p.nombre === pokemon.nombre)) {
+      pokedex.push(pokemon);   // sin duplicar
+    }
+  });
+
+  offset += 12;     // la próxima vez, la siguiente página
+  render(pokedex);
+}
+
+document.getElementById("cargar-mas").addEventListener("click", cargarMas);
