@@ -88,10 +88,27 @@ async function buscarPokemon(nombre) {
   return adaptarPokemon(data);
 }
 
+// HU3: suma el Pokémon a la colección, sin duplicar
+function capturar(pokemon) {
+  if (!pokedex.some(p => p.nombre === pokemon.nombre)) {
+    pokedex.push(pokemon);   // hace crecer tu colección
+  }
+  render(pokedex);           // vuelve la colección completa, ya con el nuevo
+  buscador.value = "";
+}
+
 // muestra la tarjeta del Pokémon encontrado
 function mostrarResultado(pokemon) {
+  const tarjeta = crearTarjeta(pokemon);            // la tarjeta de C09 (un nodo)
+
+  const boton = document.createElement("button");
+  boton.textContent = "⚡ Capturar";
+  boton.className = "mt-2 w-full bg-yellow-400 font-semibold rounded-lg py-1 hover:bg-yellow-500";
+  boton.addEventListener("click", () => capturar(pokemon));
+  tarjeta.appendChild(boton);                       // el botón SOLO en el resultado
+
   contenedor.innerHTML = "";
-  contenedor.appendChild(crearTarjeta(pokemon));
+  contenedor.appendChild(tarjeta);
 }
 
 async function mostrarBusqueda(nombre) {
