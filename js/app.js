@@ -70,3 +70,13 @@ buscador.addEventListener("input", function () {
   const filtrados = ampliada.filter(p => p.nombre.includes(texto));
   render(filtrados);
 });
+
+// ---------- Lab 10, HU1: experimento de asincronía ----------
+console.log("1. pido los datos…");
+
+fetch("https://pokeapi.co/api/v2/pokemon/pikachu")
+  .then(function (response) {
+    console.log("3. ¡los datos llegaron! (al final)");
+  });
+
+console.log("2. sigo trabajando sin esperar");
