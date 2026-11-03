@@ -1,20 +1,6 @@
 // =========================================================
-// Laboratorio 09 — JavaScript moderno y render dinámico
+// Laboratorio 10 — Tu Pokédex, ahora desde la web
 // =========================================================
-
-const pokemonLocal = [
-  { nombre: "bulbasaur",  imagen: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png",  tipos: ["grass", "poison"] },
-  { nombre: "charmander", imagen: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png",  tipos: ["fire"] },
-  { nombre: "squirtle",   imagen: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png",  tipos: ["water"] },
-  { nombre: "pikachu",    imagen: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png", tipos: ["electric"] },
-  { nombre: "jigglypuff", imagen: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/39.png", tipos: ["normal", "fairy"] },
-  { nombre: "gengar",     imagen: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/94.png",  tipos: ["ghost", "poison"] }
-];
-
-// Logro 2: agrega un Pokémon SIN mutar el array original (spread).
-// A propósito no tiene imagen: así se ve funcionando el respaldo de ??.
-const nuevo = { nombre: "missingno", tipos: ["normal"] };
-const ampliada = [...pokemonLocal, nuevo];
 
 // Logro 1: color de cada badge según el tipo
 const coloresTipo = {
@@ -60,23 +46,18 @@ function render(lista) {
   });
 }
 
-render(ampliada);   // ¡píntalo!
-
-// HU4: filtrar en vivo → el MISMO render, con datos distintos
-const buscador = document.getElementById("buscador");
-
-buscador.addEventListener("input", function () {
-  const texto = buscador.value.toLowerCase();
-  const filtrados = ampliada.filter(p => p.nombre.includes(texto));
-  render(filtrados);
-});
-
-// ---------- Lab 10, HU1: experimento de asincronía ----------
-console.log("1. pido los datos…");
+// HU2: traer un Pokémon de la API
+contenedor.innerHTML = `<p class="col-span-full text-center text-slate-500">Cargando…</p>`;
 
 fetch("https://pokeapi.co/api/v2/pokemon/pikachu")
   .then(function (response) {
-    console.log("3. ¡los datos llegaron! (al final)");
+    return response.json();   // convierte el JSON en objeto JS (también tarda → otra promesa)
+  })
+  .then(function (data) {
+    console.log(data);        // los datos reales de la API (estructura anidada)
+  })
+  .catch(function () {
+    contenedor.innerHTML = `<p class="col-span-full text-center text-red-600">No se pudo cargar.</p>`;
   });
 
-console.log("2. sigo trabajando sin esperar");
+console.log("sigo trabajando");   // se imprime ANTES que los datos
