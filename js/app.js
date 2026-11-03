@@ -1,5 +1,5 @@
 // =========================================================
-// Laboratorio 10 — Tu Pokédex, ahora desde la web
+// Laboratorio 11 — async/await y búsqueda en la API
 // =========================================================
 
 // Logro 1: color de cada badge según el tipo
@@ -38,10 +38,24 @@ function crearTarjeta(pokemon) {
   return articulo;
 }
 
+// Logro 2: botón para sacar un Pokémon de la colección
+function crearBotonQuitar(pokemon) {
+  const boton = document.createElement("button");
+  boton.textContent = "Quitar";
+  boton.setAttribute("aria-label", `Quitar a ${pokemon.nombre}`);
+  boton.className = "mt-2 text-xs text-slate-500 underline hover:text-red-600";
+  boton.addEventListener("click", function () {
+    pokedex = pokedex.filter(p => p.nombre !== pokemon.nombre);
+    render(pokedex);
+  });
+  return boton;
+}
+
 function render(lista) {
   contenedor.innerHTML = "";                 // 1. limpia lo anterior
   lista.forEach(function (pokemon) {
     const tarjeta = crearTarjeta(pokemon);   // 2. crea el nodo
+    tarjeta.appendChild(crearBotonQuitar(pokemon));   // Logro 2 (solo en la rejilla)
     contenedor.appendChild(tarjeta);         // 3. lo inserta en el DOM
   });
 }
@@ -51,21 +65,16 @@ function adaptarPokemon(data) {
   return {
     nombre: data.name,
     imagen: data.sprites?.front_default ?? "https://via.placeholder.com/96?text=?",
-    tipos:  data.types.map(t => t.type.name)   // [{type:{name:"electric"}}] → ["electric"]
+    tipos:  data.types.map(t => t.type.name),   // [{type:{name:"electric"}}] → ["electric"]
+    stats:  data.stats.map(s => ({ nombre: s.stat.name, valor: s.base_stat }))
+    // data.stats = [{ base_stat: 35, stat: { name: "hp" } }, ...]
   };
 }
 
-const nombres = ["bulbasaur", "charmander", "squirtle", "pikachu", "jigglypuff", "gengar"];
 let pokedex = [];   // aquí guardamos la rejilla cargada
 
 const buscador = document.getElementById("buscador");
-
-// Mismo buscador de C09: solo cambia la fuente (antes pokemonLocal, ahora pokedex)
-buscador.addEventListener("input", function () {
-  const texto = buscador.value.toLowerCase();
-  const filtrados = pokedex.filter(p => p.nombre.includes(texto));
-  render(filtrados);
-});
+const boton = document.getElementById("btn-buscar");
 
 // Logro 1: spinner animado mientras llegan los datos
 contenedor.innerHTML = `
@@ -75,16 +84,94 @@ contenedor.innerHTML = `
   </div>
 `;
 
-// un fetch por cada nombre → un array de promesas
-const promesas = nombres.map(function (nombre) {
-  return fetch(`https://pokeapi.co/api/v2/pokemon/${nombre}`).then(r => r.json());
+async function obtenerPokemon(idONombre) {
+  const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${idONombre}`);
+  return response.json();
+}
+
+async function cargarPokedex() {
+  const nombres = ["bulbasaur", "charmander", "squirtle", "pikachu", "jigglypuff", "gengar"];
+  const datos = await Promise.all(nombres.map(obtenerPokemon));   // varios en paralelo, con await
+  pokedex = datos.map(adaptarPokemon);
+  render(pokedex);
+}
+
+cargarPokedex();
+
+// HU2: buscar y traer un Pokémon de la API
+// Logro 1: la API también acepta números (/pokemon/25), así que sirve el mismo código
+async function buscarPokemon(nombre) {
+  const data = await obtenerPokemon(nombre.toLowerCase());   // reusa obtenerPokemon de HU1
+  return adaptarPokemon(data);
+}
+
+// HU3: suma el Pokémon a la colección, sin duplicar
+function capturar(pokemon) {
+  if (!pokedex.some(p => p.nombre === pokemon.nombre)) {
+    pokedex.push(pokemon);   // hace crecer tu colección
+  }
+  render(pokedex);           // vuelve la colección completa, ya con el nuevo
+  buscador.value = "";
+}
+
+// muestra la tarjeta del Pokémon encontrado
+function mostrarResultado(pokemon) {
+  const tarjeta = crearTarjeta(pokemon);            // la tarjeta de C09 (un nodo)
+
+  // HU4: estadísticas (solo en el resultado de búsqueda)
+  const stats = document.createElement("div");
+  stats.className = "mt-2 text-left text-xs space-y-1";
+  stats.innerHTML = pokemon.stats.map(s => `
+    <div class="flex justify-between"><span class="capitalize">${s.nombre}</span><span class="font-semibold">${s.valor}</span></div>
+  `).join("");
+  tarjeta.appendChild(stats);
+
+  const boton = document.createElement("button");
+  boton.textContent = "⚡ Capturar";
+  boton.className = "mt-2 w-full bg-yellow-400 font-semibold rounded-lg py-1 hover:bg-yellow-500";
+  boton.addEventListener("click", () => capturar(pokemon));
+  tarjeta.appendChild(boton);                       // el botón SOLO en el resultado
+
+  contenedor.innerHTML = "";
+  contenedor.appendChild(tarjeta);
+}
+
+async function mostrarBusqueda(nombre) {
+  const pokemon = await buscarPokemon(nombre);
+  mostrarResultado(pokemon);
+}
+
+boton.addEventListener("click", function () {
+  const nombre = buscador.value.trim();
+  if (nombre !== "") mostrarBusqueda(nombre);
 });
 
-Promise.all(promesas)
-  .then(function (datos) {                 // datos = array con los 6 Pokémon crudos
-    pokedex = datos.map(adaptarPokemon);   // adapta todos a tu forma limpia
-    render(pokedex);
-  })
-  .catch(function () {
-    contenedor.innerHTML = `<p class="col-span-full text-center text-red-600">No se pudo cargar la Pokédex.</p>`;
+// Buscar también con Enter
+buscador.addEventListener("keydown", function (event) {
+  if (event.key === "Enter") boton.click();
+});
+
+// HU5: paginación con parámetros de consulta
+let offset = 0;   // desde qué Pokémon empezamos
+
+async function cargarMas() {
+  // ?limit (cuántos) y ?offset (desde dónde) = parámetros de consulta
+  const respuesta = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=12&offset=${offset}`);
+  const lista = await respuesta.json();   // { results: [{ name, url }, ...] }
+
+  // cada item trae solo name + url → pide el detalle de cada uno en paralelo
+  const datos = await Promise.all(
+    lista.results.map(item => fetch(item.url).then(r => r.json()))
+  );
+
+  datos.map(adaptarPokemon).forEach(function (pokemon) {
+    if (!pokedex.some(p => p.nombre === pokemon.nombre)) {
+      pokedex.push(pokemon);   // sin duplicar
+    }
   });
+
+  offset += 12;     // la próxima vez, la siguiente página
+  render(pokedex);
+}
+
+document.getElementById("cargar-mas").addEventListener("click", cargarMas);
