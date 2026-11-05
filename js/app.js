@@ -1,5 +1,5 @@
 // =========================================================
-// Laboratorio 11 — async/await y búsqueda en la API
+// Laboratorio 12 — Manejo de errores y estados
 // =========================================================
 
 // Logro 1: color de cada badge según el tipo
@@ -75,6 +75,7 @@ let pokedex = [];   // aquí guardamos la rejilla cargada
 
 const buscador = document.getElementById("buscador");
 const boton = document.getElementById("btn-buscar");
+const mensaje = document.getElementById("mensaje");
 
 // Logro 1: spinner animado mientras llegan los datos
 contenedor.innerHTML = `
@@ -136,9 +137,17 @@ function mostrarResultado(pokemon) {
   contenedor.appendChild(tarjeta);
 }
 
+// HU1: si la búsqueda falla, se muestra un mensaje y la app sigue viva
 async function mostrarBusqueda(nombre) {
-  const pokemon = await buscarPokemon(nombre);
-  mostrarResultado(pokemon);
+  mensaje.classList.add("hidden");   // limpia errores anteriores
+
+  try {
+    const pokemon = await buscarPokemon(nombre);
+    mostrarResultado(pokemon);   // muestra la tarjeta con el botón Capturar (de C11)
+  } catch (error) {
+    mensaje.textContent = "Algo salió mal. Revisa tu conexión.";
+    mensaje.classList.remove("hidden");
+  }
 }
 
 boton.addEventListener("click", function () {
