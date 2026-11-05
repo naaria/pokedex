@@ -56,10 +56,9 @@ function crearTarjeta(pokemon) {
 // Logro 2: botón para sacar un Pokémon de la colección
 function crearBotonQuitar(pokemon) {
   const boton = document.createElement("button");
-  boton.textContent = "Quitar";
+  boton.textContent = "✕ Quitar";
   boton.setAttribute("aria-label", `Quitar a ${pokemon.nombre}`);
   boton.className = "mb-3 px-2 text-lg text-zinc-500 hover:text-[#dc0a2d]";
-  boton.textContent = "✕ Quitar";
   boton.addEventListener("click", function () {
     pokedex = pokedex.filter(p => p.nombre !== pokemon.nombre);
     mostrarColeccion();
@@ -286,8 +285,10 @@ async function mostrarBusqueda(nombre) {
       mostrarResultado(pokemon);     // muestra la tarjeta con el botón Capturar (de C11)
     }
   } catch (error) {
-    // "algo se rompió" (sin red, error del servidor) → mensaje de error en rojo
-    const texto = error.message === "Failed to fetch"
+    // "algo se rompió" → mensaje de error en rojo.
+    // Sin red, fetch lanza un TypeError en todos los navegadores (el texto cambia: Chrome
+    // dice "Failed to fetch", Safari "Load failed"), así que se revisa el TIPO de error.
+    const texto = error instanceof TypeError
       ? "Algo salió mal. Revisa tu conexión."
       : error.message;
     mostrarError(texto, () => mostrarBusqueda(nombre));   // repite la misma búsqueda
