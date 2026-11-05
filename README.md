@@ -12,9 +12,10 @@ Buscador de Pokémon que consume la [PokeAPI](https://pokeapi.co/). Carga una re
 
 1. Abre el sitio desplegado: la rejilla carga 6 Pokémon desde la API.
 2. Escribe un **nombre o número** (ej. `charizard` o `25`) y presiona **Buscar** o **Enter**.
-3. En el resultado verás sus estadísticas; presiona **⚡ Capturar** para sumarlo a tu Pokédex.
+3. En el resultado verás sus estadísticas en barras; presiona **⚡ Capturar** para sumarlo a tu Pokédex.
 4. Usa **Cargar más** para traer la siguiente página de 12 Pokémon.
 5. Usa **Quitar** en una tarjeta para sacarla de tu colección.
+6. Usa los botones de tipo (**Todos**, *fire*, *water*…) para filtrar la rejilla.
 
 ![Resultado de búsqueda con estadísticas y botón Capturar](docs/captura-busqueda.jpg)
 
@@ -52,6 +53,18 @@ Como entrenador, quiero ver las estadísticas del Pokémon que busqué como barr
 - Accesibilidad: el número siempre está escrito junto a la barra, así la información no depende solo del color; la barra es decorativa (`aria-hidden`).
 
 **Implementación:** `crearBarrasStats(stats)` usa `.map()` para crear cada fila, `.reduce()` para el total y `??` para los nombres que no estén traducidos. `crearTarjeta` no cambia: las barras se agregan al nodo solo en el resultado de búsqueda.
+
+### HU-B: Filtrar la Pokédex por tipo (`feature/hu-filtro-tipo`)
+
+Como entrenador, quiero filtrar mi Pokédex por tipo (fuego, agua, planta…) para encontrar rápido a los Pokémon de un tipo cuando mi colección crece.
+
+**Criterios de aceptación**
+- Sobre la rejilla aparece un botón por cada tipo que hay **en la colección actual**, con cuántos Pokémon tiene, más un botón **Todos**.
+- Al pulsar un tipo, la rejilla muestra solo los Pokémon de ese tipo (los de doble tipo aparecen en ambos); **Todos** vuelve a mostrar la colección completa.
+- El filtro se mantiene al capturar, cargar más o quitar Pokémon, y los botones se actualizan solos. Si se quita el último Pokémon de un tipo, el filtro vuelve a **Todos**.
+- Accesibilidad: cada botón indica si está activo con `aria-pressed` y el grupo tiene `aria-label`. El botón activo se distingue con un anillo, no solo con el color.
+
+**Implementación:** `mostrarColeccion()` aplica el filtro y llama a `render()` de C09 sin modificarlo; reemplaza a las llamadas `render(pokedex)`. Los tipos únicos salen de `new Set(pokedex.flatMap(p => p.tipos))`. Después de buscar un Pokémon, pulsar un filtro también sirve para volver a la colección.
 
 ## Manejo de errores y estados
 
