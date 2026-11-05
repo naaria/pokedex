@@ -153,17 +153,54 @@ function capturar(pokemon) {
   buscador.value = "";
 }
 
+// ---------- HU-A (proyecto): estadísticas con barras ----------
+const nombresStats = {
+  "hp": "PS",
+  "attack": "Ataque",
+  "defense": "Defensa",
+  "special-attack": "At. especial",
+  "special-defense": "Def. especial",
+  "speed": "Velocidad"
+};
+const STAT_MAXIMA = 255;   // el valor base más alto que existe en los juegos
+
+// Color según qué tan alta es la estadística
+function colorBarra(valor) {
+  if (valor < 50) return "bg-red-400";
+  if (valor < 90) return "bg-yellow-400";
+  return "bg-green-500";
+}
+
+function crearBarrasStats(stats) {
+  const contenedorStats = document.createElement("div");
+  contenedorStats.className = "mt-3 text-left text-xs space-y-1.5";
+
+  const filas = stats.map(function ({ nombre, valor }) {   // destructuring en el parámetro
+    const ancho = Math.round((valor / STAT_MAXIMA) * 100);   // % de la barra
+    const etiqueta = nombresStats[nombre] ?? nombre;
+    return `
+      <div>
+        <div class="flex justify-between"><span>${etiqueta}</span><span class="font-semibold">${valor}</span></div>
+        <div class="h-2 rounded-full bg-slate-200 overflow-hidden" aria-hidden="true">
+          <div class="h-2 rounded-full ${colorBarra(valor)}" style="width: ${ancho}%"></div>
+        </div>
+      </div>`;
+  });
+
+  const total = stats.reduce((suma, s) => suma + s.valor, 0);
+  contenedorStats.innerHTML = filas.join("") + `
+    <div class="flex justify-between border-t border-slate-200 pt-1.5 font-semibold">
+      <span>Total</span><span>${total}</span>
+    </div>`;
+  return contenedorStats;
+}
+
 // muestra la tarjeta del Pokémon encontrado
 function mostrarResultado(pokemon) {
   const tarjeta = crearTarjeta(pokemon);            // la tarjeta de C09 (un nodo)
 
-  // HU4: estadísticas (solo en el resultado de búsqueda)
-  const stats = document.createElement("div");
-  stats.className = "mt-2 text-left text-xs space-y-1";
-  stats.innerHTML = pokemon.stats.map(s => `
-    <div class="flex justify-between"><span class="capitalize">${s.nombre}</span><span class="font-semibold">${s.valor}</span></div>
-  `).join("");
-  tarjeta.appendChild(stats);
+  // HU4 (C11) + HU-A del proyecto: estadísticas con barras (solo en el resultado de búsqueda)
+  tarjeta.appendChild(crearBarrasStats(pokemon.stats));
 
   const boton = document.createElement("button");
   boton.textContent = "⚡ Capturar";

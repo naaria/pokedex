@@ -37,6 +37,22 @@ Buscador de Pokémon que consume la [PokeAPI](https://pokeapi.co/). Carga una re
 
 Logros opcionales implementados: color de badge por tipo, búsqueda por número, botón Quitar, spinner animado, botón Reintentar y "no encontrado" distinto de un error.
 
+## Historias de usuario del proyecto
+
+Cada historia se desarrolló en su propia rama y se integró a `main` con un Pull Request.
+
+### HU-A: Estadísticas con barras (`feature/hu-barras-stats`)
+
+Como entrenador, quiero ver las estadísticas del Pokémon que busqué como barras de colores para comparar de un vistazo qué tan fuerte es antes de capturarlo.
+
+**Criterios de aceptación**
+- El resultado de búsqueda muestra las 6 estadísticas con su nombre en español (PS, Ataque, Defensa, At. especial, Def. especial, Velocidad) y su valor numérico.
+- Cada barra es proporcional al valor sobre el máximo posible (255) y cambia de color según el nivel: rojo (< 50), amarillo (50–89), verde (≥ 90).
+- Se muestra el total de estadísticas base.
+- Accesibilidad: el número siempre está escrito junto a la barra, así la información no depende solo del color; la barra es decorativa (`aria-hidden`).
+
+**Implementación:** `crearBarrasStats(stats)` usa `.map()` para crear cada fila, `.reduce()` para el total y `??` para los nombres que no estén traducidos. `crearTarjeta` no cambia: las barras se agregan al nodo solo en el resultado de búsqueda.
+
 ## Manejo de errores y estados
 
 | Situación | Qué ve el usuario |
