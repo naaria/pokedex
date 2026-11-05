@@ -4,39 +4,139 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pokédex</title>
+  <!-- Fuente pixelada estilo Game Boy / Nintendo DS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Piezas retro que se repiten (badges, marcos, cajas de diálogo). El layout sigue siendo Tailwind -->
+  <style>
+    /* VT323 para textos y números (legible); Silkscreen para títulos, badges y botones */
+    body { font-family: "VT323", ui-monospace, monospace; font-size: 1.2rem; }
+    .pixel-titulo, .tipo, .boton-ds { font-family: "Silkscreen", "VT323", monospace; }
+
+    /* Sprites nítidos, sin difuminar los píxeles */
+    .pixelado { image-rendering: pixelated; }
+
+    /* Badge de tipo: rectángulo pixelado con borde y sombra más oscuros (usa --color) */
+    .tipo {
+      display: inline-block;
+      min-width: 4.5rem;
+      padding: 0.15rem 0.5rem;
+      font-size: 0.72rem;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: #fff;
+      text-shadow: 1px 1px 0 rgba(0,0,0,.45), -1px -1px 0 rgba(0,0,0,.2);
+      background: var(--color);
+      border: 2px solid color-mix(in srgb, var(--color) 65%, #000);
+      border-radius: 4px;
+      box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--color) 75%, #000),
+                  inset 0 2px 0 color-mix(in srgb, var(--color) 70%, #fff);
+    }
+    button.tipo { cursor: pointer; transition: transform .1s; }
+    button.tipo:hover { transform: translateY(-2px); }
+    button.tipo[aria-pressed="true"] { outline: 3px solid #1f2937; outline-offset: 2px; }
+
+    /* Tarjeta tipo ficha de Pokédex */
+    .tarjeta-dex {
+      background: #fbfaf5;
+      border: 4px solid #3f3f46;
+      border-radius: 10px;
+      box-shadow: 4px 4px 0 rgba(0,0,0,.2);
+      overflow: hidden;
+    }
+
+    /* Marco del sprite: rayas celestes y borde dorado, como en la ficha de Eevee */
+    .marco-sprite {
+      background: repeating-linear-gradient(180deg, #e8f0f8 0 6px, #ffffff 6px 12px);
+      border: 4px solid #d8c078;
+      border-radius: 14px;
+      box-shadow: inset 0 0 0 3px #f8f0c8;
+    }
+
+    /* Caja de diálogo azul (estadísticas y avisos) */
+    .caja-dialogo {
+      background: #ffffff;
+      border: 4px solid #3878c8;
+      border-radius: 10px;
+      box-shadow: 0 0 0 4px #a8d0f8;
+      color: #27272a;
+    }
+    .caja-error { border-color: #c83838; box-shadow: 0 0 0 4px #f8b0b0; }
+
+    /* Botón estilo Nintendo DS */
+    .boton-ds {
+      border: 3px solid #3f3f46;
+      border-radius: 8px;
+      box-shadow: inset 0 -4px 0 rgba(0,0,0,.18), 3px 3px 0 rgba(0,0,0,.2);
+      font-weight: 400;
+      text-transform: uppercase;
+      transition: transform .1s, box-shadow .1s;
+    }
+    .boton-ds:active { transform: translate(2px, 2px); box-shadow: inset 0 -2px 0 rgba(0,0,0,.18); }
+
+    /* Spinner: una Pokébola */
+    .pokebola {
+      width: 44px; height: 44px; border-radius: 50%;
+      border: 4px solid #27272a;
+      background: linear-gradient(180deg, #e3350d 0 44%, #27272a 44% 56%, #ffffff 56% 100%);
+      position: relative;
+    }
+    .pokebola::after {
+      content: ""; position: absolute; inset: 50% auto auto 50%;
+      width: 14px; height: 14px; transform: translate(-50%, -50%);
+      background: #fff; border: 4px solid #27272a; border-radius: 50%;
+    }
+
+    /* Luces de la Pokédex */
+    .luz { border-radius: 50%; border: 3px solid #27272a; }
+  </style>
 </head>
-<body class="bg-slate-100 min-h-screen p-6">
-  <h1 class="text-3xl font-bold text-center text-slate-800 mb-6">Pokédex</h1>
+<body class="min-h-screen bg-[#2b2b33] p-3 sm:p-6 text-zinc-800">
+  <!-- Carcasa roja de la Pokédex -->
+  <div class="max-w-5xl mx-auto rounded-2xl bg-[#dc0a2d] border-4 border-[#89061c] shadow-[8px_8px_0_rgba(0,0,0,.35)] overflow-hidden">
+    <header class="flex items-center gap-3 px-4 py-3 sm:px-6 bg-[#dc0a2d] border-b-4 border-[#89061c]">
+      <span class="luz w-12 h-12 bg-[radial-gradient(circle_at_35%_35%,#bfe9ff,#28aafd_45%,#1d6fbd)] shadow-[0_0_0_4px_#fff]" aria-hidden="true"></span>
+      <span class="luz w-4 h-4 bg-[#ff1c1c]" aria-hidden="true"></span>
+      <span class="luz w-4 h-4 bg-[#fecb00]" aria-hidden="true"></span>
+      <span class="luz w-4 h-4 bg-[#32cb65]" aria-hidden="true"></span>
+      <h1 class="pixel-titulo ml-auto text-2xl sm:text-4xl font-bold text-white [text-shadow:3px_3px_0_#89061c]">POKÉDEX</h1>
+    </header>
 
-  <div class="max-w-md mx-auto flex gap-2 mb-6">
-    <label for="buscador" class="sr-only">Buscar un Pokémon</label>
-    <input id="buscador" type="text" placeholder="Nombre o número (ej. charizard o 25)"
-           class="flex-1 p-2 rounded-lg border border-slate-300">
-    <button id="btn-buscar" class="px-4 py-2 bg-yellow-400 font-semibold rounded-lg hover:bg-yellow-500">
-      Buscar
-    </button>
-  </div>
+    <!-- Pantalla -->
+    <main class="m-3 sm:m-5 rounded-xl bg-[#e8e4dc] border-4 border-[#3f3f46] p-4 sm:p-6">
+      <div class="max-w-md mx-auto flex gap-2 mb-6">
+        <label for="buscador" class="sr-only">Buscar un Pokémon</label>
+        <input id="buscador" type="text" placeholder="Nombre o nº (ej. eevee o 25)"
+               class="flex-1 min-w-0 px-3 py-1.5 text-2xl bg-white border-[3px] border-zinc-700 rounded-lg shadow-[inset_0_3px_0_rgba(0,0,0,.08)] focus:outline-none focus:ring-4 focus:ring-[#fecb00]">
+        <button id="btn-buscar" class="boton-ds px-4 py-2 bg-[#fecb00] hover:bg-[#ffd83d]">
+          Buscar
+        </button>
+      </div>
 
-  <!-- Zonas de estado: carga (#spinner) y errores (#mensaje). hidden las oculta hasta que el JS las muestre -->
-  <div id="spinner" class="hidden text-center text-slate-500 my-4" role="status">
-    <div class="flex flex-col items-center gap-2">
-      <div class="h-10 w-10 animate-spin rounded-full border-4 border-slate-300 border-t-yellow-400"></div>
-      <p>Cargando…</p>
-    </div>
-  </div>
-  <div id="mensaje" class="hidden text-center text-red-600 font-medium my-4" role="alert"></div>
+      <!-- Zonas de estado: carga (#spinner) y errores (#mensaje). hidden las oculta hasta que el JS las muestre -->
+      <div id="spinner" class="hidden text-center my-4" role="status">
+        <div class="flex flex-col items-center gap-2">
+          <div class="pokebola animate-spin" aria-hidden="true"></div>
+          <p class="pixel-titulo text-sm">Cargando…</p>
+        </div>
+      </div>
+      <div id="mensaje" class="hidden caja-dialogo caja-error max-w-xl mx-auto px-4 py-3 text-center text-lg font-semibold my-5" role="alert"></div>
 
-  <!-- HU-B (proyecto): botones para filtrar la colección por tipo. Los genera el JS -->
-  <div id="filtros" class="max-w-4xl mx-auto flex flex-wrap justify-center gap-2 mb-4" role="group" aria-label="Filtrar por tipo"></div>
+      <!-- HU-B (proyecto): botones para filtrar la colección por tipo. Los genera el JS -->
+      <div id="filtros" class="max-w-4xl mx-auto flex flex-wrap justify-center gap-2 mb-5" role="group" aria-label="Filtrar por tipo"></div>
 
-  <!-- Aquí el JS pintará las tarjetas. Empieza vacío. -->
-  <div id="resultado" class="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl mx-auto"></div>
+      <!-- Aquí el JS pintará las tarjetas. Empieza vacío. -->
+      <div id="resultado" class="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl mx-auto"></div>
 
-  <div class="text-center my-6">
-    <button id="cargar-mas" class="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800">
-      Cargar más
-    </button>
+      <div class="text-center mt-6">
+        <button id="cargar-mas" class="boton-ds px-5 py-2 bg-[#3878c8] text-white hover:bg-[#4888d8]">
+          Cargar más
+        </button>
+      </div>
+    </main>
   </div>
 
   <script src="js/app.js"></script>

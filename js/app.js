@@ -2,38 +2,53 @@
 // Laboratorio 12 — Manejo de errores y estados
 // =========================================================
 
-// Logro 1: color de cada badge según el tipo
+// Logro 1: color de cada badge según el tipo (paleta clásica de los juegos)
 const coloresTipo = {
-  grass: "bg-green-200 text-green-800",
-  poison: "bg-purple-200 text-purple-800",
-  fire: "bg-red-200 text-red-800",
-  water: "bg-blue-200 text-blue-800",
-  electric: "bg-yellow-200 text-yellow-800",
-  normal: "bg-stone-200 text-stone-800",
-  fairy: "bg-pink-200 text-pink-800",
-  ghost: "bg-indigo-200 text-indigo-800"
+  fighting: "#C03028", fire: "#F08030", electric: "#F8D030",
+  bug: "#A8B820", grass: "#78C850", ice: "#98D8D8",
+  water: "#6890F0", dragon: "#7038F8", ghost: "#705898",
+  poison: "#A040A0", psychic: "#F85888", flying: "#A890F0",
+  steel: "#B8B8D0", normal: "#A8A878", ground: "#E0C068",
+  rock: "#B8A038", dark: "#705848", fairy: "#EE99AC"
 };
+
+// Abreviaturas como en la pantalla de la Pokédex
+const abreviaturas = { fighting: "fight", electric: "electr", psychic: "psychc" };
+
+function badgeTipo(tipo) {
+  const color = coloresTipo[tipo] ?? "#68A090";
+  const texto = abreviaturas[tipo] ?? tipo;
+  return `<span class="tipo" style="--color: ${color}">${texto}</span>`;
+}
 
 const contenedor = document.getElementById("resultado");
 
 function crearTarjeta(pokemon) {
-  const { nombre, imagen, tipos } = pokemon;            // destructuring de objeto
+  const { nombre, imagen, tipos, numero } = pokemon;    // destructuring de objeto
   const img = imagen ?? "https://via.placeholder.com/96?text=?";   // ?? : respaldo si falta la imagen
   const [principal = "desconocido"] = tipos ?? [];      // Logro 3: destructuring de array
 
   // ?. : si a un Pokémon le faltaran los tipos, no se rompe
-  const badges = tipos?.map(function (tipo) {
-    const color = coloresTipo[tipo] ?? "bg-slate-200 text-slate-700";
-    return `<span class="text-xs ${color} px-2 py-1 rounded-full">${tipo}</span>`;
-  }).join("") ?? "";
+  const badges = tipos?.map(badgeTipo).join("") ?? "";
+
+  // Número con 3 cifras como en la Pokédex: 25 → "025" (si no hay número, no se muestra)
+  const numeroDex = numero ? `Nº${String(numero).padStart(3, "0")}` : "";
 
   const articulo = document.createElement("article");
-  articulo.className = "bg-white rounded-xl shadow p-4 text-center";
+  articulo.className = "tarjeta-dex text-center";
   articulo.innerHTML = `
-    <img src="${img}" alt="${nombre}" class="w-24 h-24 mx-auto">
-    <h2 class="capitalize font-bold text-slate-800 mt-2">${nombre}</h2>
-    <div class="flex gap-1 justify-center mt-2 flex-wrap">${badges}</div>
-    <p class="text-xs text-slate-500 mt-2">Tipo principal: ${principal}</p>
+    <div class="flex items-center gap-2 px-3 py-1.5 bg-[#f8f0b0] border-b-4 border-[#d8c078] text-left">
+      <span class="inline-block w-3.5 h-3.5 rounded-full border-2 border-zinc-700 bg-[linear-gradient(180deg,#e3350d_0_45%,#27272a_45%_55%,#fff_55%)]" aria-hidden="true"></span>
+      <span class="text-xl text-zinc-600">${numeroDex}</span>
+      <h2 class="pixel-titulo uppercase text-[0.7rem] sm:text-sm text-zinc-800 truncate">${nombre}</h2>
+    </div>
+    <div class="p-3">
+      <div class="marco-sprite mx-auto w-28 h-28 grid place-items-center">
+        <img src="${img}" alt="${nombre}" class="pixelado w-24 h-24">
+      </div>
+      <div class="flex gap-1.5 justify-center mt-3 flex-wrap">${badges}</div>
+      <p class="text-lg text-zinc-500 mt-1 uppercase">Tipo principal: ${principal}</p>
+    </div>
   `;
   return articulo;
 }
@@ -43,7 +58,8 @@ function crearBotonQuitar(pokemon) {
   const boton = document.createElement("button");
   boton.textContent = "Quitar";
   boton.setAttribute("aria-label", `Quitar a ${pokemon.nombre}`);
-  boton.className = "mt-2 text-xs text-slate-500 underline hover:text-red-600";
+  boton.className = "mb-3 px-2 text-lg text-zinc-500 hover:text-[#dc0a2d]";
+  boton.textContent = "✕ Quitar";
   boton.addEventListener("click", function () {
     pokedex = pokedex.filter(p => p.nombre !== pokemon.nombre);
     mostrarColeccion();
@@ -64,6 +80,7 @@ function render(lista) {
 function adaptarPokemon(data) {
   return {
     nombre: data.name,
+    numero: data.id,   // nº de la Pokédex (para la cabecera "Nº025")
     imagen: data.sprites?.front_default ?? "https://via.placeholder.com/96?text=?",
     tipos:  data.types.map(t => t.type.name),   // [{type:{name:"electric"}}] → ["electric"]
     stats:  data.stats.map(s => ({ nombre: s.stat.name, valor: s.base_stat }))
@@ -79,11 +96,12 @@ const filtros = document.getElementById("filtros");
 
 function crearBotonFiltro(tipo, cantidad) {
   const activo = tipo === tipoActivo;
-  const color = tipo === "todos" ? "bg-slate-700 text-white" : (coloresTipo[tipo] ?? "bg-slate-200 text-slate-700");
+  const color = tipo === "todos" ? "#52525b" : (coloresTipo[tipo] ?? "#68A090");
   const boton = document.createElement("button");
-  boton.textContent = `${tipo === "todos" ? "Todos" : tipo} (${cantidad})`;
+  boton.textContent = `${tipo === "todos" ? "Todos" : (abreviaturas[tipo] ?? tipo)} ${cantidad}`;
   boton.setAttribute("aria-pressed", String(activo));   // lectores de pantalla: cuál está activo
-  boton.className = `text-xs capitalize px-3 py-1 rounded-full transition ${color} ${activo ? "ring-2 ring-offset-2 ring-slate-700" : "opacity-70 hover:opacity-100"}`;
+  boton.className = `tipo ${activo ? "" : "opacity-60 hover:opacity-100"}`;
+  boton.style.setProperty("--color", color);
   boton.addEventListener("click", function () {
     tipoActivo = tipo;
     mostrarColeccion();
@@ -125,7 +143,7 @@ const spinner = document.getElementById("spinner");
 function mostrarError(texto, reintentar) {
   const boton = document.createElement("button");
   boton.textContent = "Reintentar";
-  boton.className = "ml-2 px-3 py-1 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700";
+  boton.className = "boton-ds ml-3 px-3 py-1 text-sm bg-[#fecb00] text-zinc-800 hover:bg-[#ffd83d]";
   boton.addEventListener("click", reintentar);
   mensaje.replaceChildren(texto, boton);   // texto + botón dentro de #mensaje
   mensaje.classList.remove("hidden");
@@ -176,12 +194,12 @@ async function buscarPokemon(nombre) {
 // Aviso neutro (no es un error): la búsqueda funcionó, pero no hay resultado
 function mostrarNoEncontrado(nombre) {
   const aviso = document.createElement("div");
-  aviso.className = "col-span-full bg-white rounded-xl shadow p-6 text-center text-slate-600";
+  aviso.className = "col-span-full caja-dialogo max-w-xl w-full mx-auto px-5 py-4 text-center";
   const titulo = document.createElement("p");
-  titulo.className = "font-semibold text-slate-800";
+  titulo.className = "pixel-titulo text-base font-bold";
   titulo.textContent = `🔍 No se encontró "${nombre}"`;   // textContent: lo escrito no se interpreta como HTML
   const ayuda = document.createElement("p");
-  ayuda.className = "text-sm mt-1";
+  ayuda.className = "mt-1 text-zinc-600";
   ayuda.textContent = "Revisa cómo se escribe o prueba con su número (ej. 25).";
   aviso.append(titulo, ayuda);
   contenedor.replaceChildren(aviso);
@@ -209,30 +227,30 @@ const STAT_MAXIMA = 255;   // el valor base más alto que existe en los juegos
 
 // Color según qué tan alta es la estadística
 function colorBarra(valor) {
-  if (valor < 50) return "bg-red-400";
-  if (valor < 90) return "bg-yellow-400";
-  return "bg-green-500";
+  if (valor < 50) return "bg-[#f05030]";
+  if (valor < 90) return "bg-[#f8c030]";
+  return "bg-[#48b048]";
 }
 
 function crearBarrasStats(stats) {
   const contenedorStats = document.createElement("div");
-  contenedorStats.className = "mt-3 text-left text-xs space-y-1.5";
+  contenedorStats.className = "caja-dialogo mx-3 mt-1 mb-4 px-3 py-2 text-left text-xl leading-tight space-y-1";
 
   const filas = stats.map(function ({ nombre, valor }) {   // destructuring en el parámetro
     const ancho = Math.round((valor / STAT_MAXIMA) * 100);   // % de la barra
     const etiqueta = nombresStats[nombre] ?? nombre;
     return `
       <div>
-        <div class="flex justify-between"><span>${etiqueta}</span><span class="font-semibold">${valor}</span></div>
-        <div class="h-2 rounded-full bg-slate-200 overflow-hidden" aria-hidden="true">
-          <div class="h-2 rounded-full ${colorBarra(valor)}" style="width: ${ancho}%"></div>
+        <div class="flex justify-between uppercase tracking-wide"><span>${etiqueta}</span><span class="font-bold">${valor}</span></div>
+        <div class="h-2.5 bg-zinc-200 border-2 border-zinc-700 rounded-sm overflow-hidden" aria-hidden="true">
+          <div class="h-full ${colorBarra(valor)}" style="width: ${ancho}%"></div>
         </div>
       </div>`;
   });
 
   const total = stats.reduce((suma, s) => suma + s.valor, 0);
   contenedorStats.innerHTML = filas.join("") + `
-    <div class="flex justify-between border-t border-slate-200 pt-1.5 font-semibold">
+    <div class="flex justify-between border-t-2 border-dashed border-zinc-300 pt-1.5 font-bold uppercase tracking-wide">
       <span>Total</span><span>${total}</span>
     </div>`;
   return contenedorStats;
@@ -247,7 +265,7 @@ function mostrarResultado(pokemon) {
 
   const boton = document.createElement("button");
   boton.textContent = "⚡ Capturar";
-  boton.className = "mt-2 w-full bg-yellow-400 font-semibold rounded-lg py-1 hover:bg-yellow-500";
+  boton.className = "boton-ds mb-4 w-[calc(100%-1.5rem)] py-2 bg-[#fecb00] text-zinc-800 hover:bg-[#ffd83d]";
   boton.addEventListener("click", () => capturar(pokemon));
   tarjeta.appendChild(boton);                       // el botón SOLO en el resultado
 

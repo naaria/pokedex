@@ -19,12 +19,24 @@ Buscador de Pokémon que consume la [PokeAPI](https://pokeapi.co/). Carga una re
 
 ![Resultado de búsqueda con estadísticas y botón Capturar](docs/captura-busqueda.jpg)
 
+## Diseño
+
+Interfaz inspirada en la Pokédex de las consolas portátiles (Game Boy Advance / Nintendo DS):
+
+- Carcasa roja con las luces clásicas y pantalla gris.
+- Tarjetas tipo ficha: cabecera crema con el número (`Nº133`), sprite en un marco a rayas celestes y sprites nítidos con `image-rendering: pixelated`.
+- Badges de los 18 tipos con la paleta clásica de los juegos y sus abreviaturas (`ELECTR`, `PSYCHC`, `FIGHT`).
+- Estadísticas dentro de una caja de diálogo azul, botones estilo DS y una Pokébola girando como indicador de carga.
+- Fuentes pixeladas de Google Fonts: **VT323** para textos y números (legible) y **Silkscreen** para títulos, badges y botones.
+
+El layout sigue hecho con Tailwind; las piezas retro que se repiten (badge, marco, caja de diálogo, botón) están en un pequeño bloque `<style>` del `index.html`. El color de cada badge se pasa con una variable CSS (`--color`).
+
 ## Tecnologías
 
 - **JavaScript** moderno: template literals, destructuring, spread, optional chaining (`?.`) y `??`
 - **Asincronía:** `fetch`, `async/await`, `Promise.all`
 - **Manejo de errores:** `try / catch / finally`, `throw new Error`, `response.ok`
-- **Tailwind CSS** (Play CDN)
+- **Tailwind CSS** (Play CDN) + fuentes **VT323** y **Silkscreen** (Google Fonts)
 - **[PokeAPI](https://pokeapi.co/)** — API pública, sin registro ni clave
 
 ## Funcionalidades por laboratorio
