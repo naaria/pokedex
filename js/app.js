@@ -1,5 +1,5 @@
 // =========================================================
-// Laboratorio 11 — async/await y búsqueda en la API
+// Laboratorio 12 — Manejo de errores y estados
 // =========================================================
 
 // Logro 1: color de cada badge según el tipo
@@ -75,25 +75,49 @@ let pokedex = [];   // aquí guardamos la rejilla cargada
 
 const buscador = document.getElementById("buscador");
 const boton = document.getElementById("btn-buscar");
+const mensaje = document.getElementById("mensaje");
+const spinner = document.getElementById("spinner");
 
-// Logro 1: spinner animado mientras llegan los datos
-contenedor.innerHTML = `
-  <div class="col-span-full flex flex-col items-center gap-3 py-8 text-slate-500" role="status">
-    <div class="h-10 w-10 animate-spin rounded-full border-4 border-slate-300 border-t-yellow-400"></div>
-    <p>Cargando…</p>
-  </div>
-`;
+// Logro 1: muestra un error con un botón "Reintentar" que repite la última acción
+function mostrarError(texto, reintentar) {
+  const boton = document.createElement("button");
+  boton.textContent = "Reintentar";
+  boton.className = "ml-2 px-3 py-1 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700";
+  boton.addEventListener("click", reintentar);
+  mensaje.replaceChildren(texto, boton);   // texto + botón dentro de #mensaje
+  mensaje.classList.remove("hidden");
+}
 
 async function obtenerPokemon(idONombre) {
   const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${idONombre}`);
+
+  // Logro: "no existe" no es un fallo de la app → devolvemos null (resultado vacío)
+  if (response.status === 404) {
+    return null;
+  }
+
+  // HU2: fetch NO falla por un 404 ni un 500, hay que revisarlo con response.ok
+  if (!response.ok) {                                    // 500, 503, etc.
+    throw new Error(`La PokeAPI respondió con un error (${response.status}). Intenta de nuevo.`);
+  }
+
   return response.json();
 }
 
+// HU3: la carga inicial también puede fallar (sin red al abrir)
 async function cargarPokedex() {
-  const nombres = ["bulbasaur", "charmander", "squirtle", "pikachu", "jigglypuff", "gengar"];
-  const datos = await Promise.all(nombres.map(obtenerPokemon));   // varios en paralelo, con await
-  pokedex = datos.map(adaptarPokemon);
-  render(pokedex);
+  spinner.classList.remove("hidden");
+  mensaje.classList.add("hidden");
+  try {
+    const nombres = ["bulbasaur", "charmander", "squirtle", "pikachu", "jigglypuff", "gengar"];
+    const datos = await Promise.all(nombres.map(obtenerPokemon));   // varios en paralelo, con await
+    pokedex = datos.map(adaptarPokemon);
+    render(pokedex);
+  } catch (error) {
+    mostrarError("No se pudo cargar la Pokédex.", cargarPokedex);
+  } finally {
+    spinner.classList.add("hidden");   // corre SIEMPRE: con éxito o con error
+  }
 }
 
 cargarPokedex();
@@ -102,7 +126,22 @@ cargarPokedex();
 // Logro 1: la API también acepta números (/pokemon/25), así que sirve el mismo código
 async function buscarPokemon(nombre) {
   const data = await obtenerPokemon(nombre.toLowerCase());   // reusa obtenerPokemon de HU1
+  if (data === null) return null;                            // no existe: no hay nada que adaptar
   return adaptarPokemon(data);
+}
+
+// Aviso neutro (no es un error): la búsqueda funcionó, pero no hay resultado
+function mostrarNoEncontrado(nombre) {
+  const aviso = document.createElement("div");
+  aviso.className = "col-span-full bg-white rounded-xl shadow p-6 text-center text-slate-600";
+  const titulo = document.createElement("p");
+  titulo.className = "font-semibold text-slate-800";
+  titulo.textContent = `🔍 No se encontró "${nombre}"`;   // textContent: lo escrito no se interpreta como HTML
+  const ayuda = document.createElement("p");
+  ayuda.className = "text-sm mt-1";
+  ayuda.textContent = "Revisa cómo se escribe o prueba con su número (ej. 25).";
+  aviso.append(titulo, ayuda);
+  contenedor.replaceChildren(aviso);
 }
 
 // HU3: suma el Pokémon a la colección, sin duplicar
@@ -136,9 +175,27 @@ function mostrarResultado(pokemon) {
   contenedor.appendChild(tarjeta);
 }
 
+// HU1: si la búsqueda falla, se muestra un mensaje y la app sigue viva
 async function mostrarBusqueda(nombre) {
-  const pokemon = await buscarPokemon(nombre);
-  mostrarResultado(pokemon);
+  spinner.classList.remove("hidden");   // ⏳ muestra carga
+  mensaje.classList.add("hidden");      // limpia errores anteriores
+
+  try {
+    const pokemon = await buscarPokemon(nombre);
+    if (pokemon === null) {
+      mostrarNoEncontrado(nombre);   // "no hay nada" → aviso neutro en #resultado
+    } else {
+      mostrarResultado(pokemon);     // muestra la tarjeta con el botón Capturar (de C11)
+    }
+  } catch (error) {
+    // "algo se rompió" (sin red, error del servidor) → mensaje de error en rojo
+    const texto = error.message === "Failed to fetch"
+      ? "Algo salió mal. Revisa tu conexión."
+      : error.message;
+    mostrarError(texto, () => mostrarBusqueda(nombre));   // repite la misma búsqueda
+  } finally {
+    spinner.classList.add("hidden");      // ✅ oculta carga SIEMPRE
+  }
 }
 
 boton.addEventListener("click", function () {
@@ -155,23 +212,34 @@ buscador.addEventListener("keydown", function (event) {
 let offset = 0;   // desde qué Pokémon empezamos
 
 async function cargarMas() {
-  // ?limit (cuántos) y ?offset (desde dónde) = parámetros de consulta
-  const respuesta = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=12&offset=${offset}`);
-  const lista = await respuesta.json();   // { results: [{ name, url }, ...] }
-
-  // cada item trae solo name + url → pide el detalle de cada uno en paralelo
-  const datos = await Promise.all(
-    lista.results.map(item => fetch(item.url).then(r => r.json()))
-  );
-
-  datos.map(adaptarPokemon).forEach(function (pokemon) {
-    if (!pokedex.some(p => p.nombre === pokemon.nombre)) {
-      pokedex.push(pokemon);   // sin duplicar
+  spinner.classList.remove("hidden");
+  mensaje.classList.add("hidden");
+  try {
+    // ?limit (cuántos) y ?offset (desde dónde) = parámetros de consulta
+    const respuesta = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=12&offset=${offset}`);
+    if (!respuesta.ok) {
+      throw new Error("No se pudieron cargar más Pokémon.");
     }
-  });
+    const lista = await respuesta.json();   // { results: [{ name, url }, ...] }
 
-  offset += 12;     // la próxima vez, la siguiente página
-  render(pokedex);
+    // cada item trae solo name + url → pide el detalle de cada uno en paralelo
+    const datos = await Promise.all(
+      lista.results.map(item => fetch(item.url).then(r => r.json()))
+    );
+
+    datos.map(adaptarPokemon).forEach(function (pokemon) {
+      if (!pokedex.some(p => p.nombre === pokemon.nombre)) {
+        pokedex.push(pokemon);   // sin duplicar
+      }
+    });
+
+    offset += 12;     // la próxima vez, la siguiente página (solo si todo salió bien)
+    render(pokedex);
+  } catch (error) {
+    mostrarError("No se pudieron cargar más Pokémon. Revisa tu conexión.", cargarMas);
+  } finally {
+    spinner.classList.add("hidden");
+  }
 }
 
 document.getElementById("cargar-mas").addEventListener("click", cargarMas);
