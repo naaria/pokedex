@@ -78,6 +78,16 @@ const boton = document.getElementById("btn-buscar");
 const mensaje = document.getElementById("mensaje");
 const spinner = document.getElementById("spinner");
 
+// Logro 1: muestra un error con un botón "Reintentar" que repite la última acción
+function mostrarError(texto, reintentar) {
+  const boton = document.createElement("button");
+  boton.textContent = "Reintentar";
+  boton.className = "ml-2 px-3 py-1 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700";
+  boton.addEventListener("click", reintentar);
+  mensaje.replaceChildren(texto, boton);   // texto + botón dentro de #mensaje
+  mensaje.classList.remove("hidden");
+}
+
 async function obtenerPokemon(idONombre) {
   const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${idONombre}`);
 
@@ -104,8 +114,7 @@ async function cargarPokedex() {
     pokedex = datos.map(adaptarPokemon);
     render(pokedex);
   } catch (error) {
-    mensaje.textContent = "No se pudo cargar la Pokédex.";
-    mensaje.classList.remove("hidden");
+    mostrarError("No se pudo cargar la Pokédex.", cargarPokedex);
   } finally {
     spinner.classList.add("hidden");   // corre SIEMPRE: con éxito o con error
   }
@@ -180,10 +189,10 @@ async function mostrarBusqueda(nombre) {
     }
   } catch (error) {
     // "algo se rompió" (sin red, error del servidor) → mensaje de error en rojo
-    mensaje.textContent = error.message === "Failed to fetch"
+    const texto = error.message === "Failed to fetch"
       ? "Algo salió mal. Revisa tu conexión."
       : error.message;
-    mensaje.classList.remove("hidden");
+    mostrarError(texto, () => mostrarBusqueda(nombre));   // repite la misma búsqueda
   } finally {
     spinner.classList.add("hidden");      // ✅ oculta carga SIEMPRE
   }
@@ -227,8 +236,7 @@ async function cargarMas() {
     offset += 12;     // la próxima vez, la siguiente página (solo si todo salió bien)
     render(pokedex);
   } catch (error) {
-    mensaje.textContent = "No se pudieron cargar más Pokémon. Revisa tu conexión.";
-    mensaje.classList.remove("hidden");
+    mostrarError("No se pudieron cargar más Pokémon. Revisa tu conexión.", cargarMas);
   } finally {
     spinner.classList.add("hidden");
   }
