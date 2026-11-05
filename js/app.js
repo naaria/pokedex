@@ -46,7 +46,7 @@ function crearBotonQuitar(pokemon) {
   boton.className = "mt-2 text-xs text-slate-500 underline hover:text-red-600";
   boton.addEventListener("click", function () {
     pokedex = pokedex.filter(p => p.nombre !== pokemon.nombre);
-    render(pokedex);
+    mostrarColeccion();
   });
   return boton;
 }
@@ -72,6 +72,49 @@ function adaptarPokemon(data) {
 }
 
 let pokedex = [];   // aquí guardamos la rejilla cargada
+
+// ---------- HU-B (proyecto): filtrar la colección por tipo ----------
+let tipoActivo = "todos";
+const filtros = document.getElementById("filtros");
+
+function crearBotonFiltro(tipo, cantidad) {
+  const activo = tipo === tipoActivo;
+  const color = tipo === "todos" ? "bg-slate-700 text-white" : (coloresTipo[tipo] ?? "bg-slate-200 text-slate-700");
+  const boton = document.createElement("button");
+  boton.textContent = `${tipo === "todos" ? "Todos" : tipo} (${cantidad})`;
+  boton.setAttribute("aria-pressed", String(activo));   // lectores de pantalla: cuál está activo
+  boton.className = `text-xs capitalize px-3 py-1 rounded-full transition ${color} ${activo ? "ring-2 ring-offset-2 ring-slate-700" : "opacity-70 hover:opacity-100"}`;
+  boton.addEventListener("click", function () {
+    tipoActivo = tipo;
+    mostrarColeccion();
+  });
+  return boton;
+}
+
+// Dibuja los botones con los tipos que hay HOY en la colección
+function renderFiltros() {
+  const tipos = [...new Set(pokedex.flatMap(p => p.tipos))].sort();   // tipos únicos (Set) y ordenados
+  filtros.innerHTML = "";
+  filtros.appendChild(crearBotonFiltro("todos", pokedex.length));
+  tipos.forEach(function (tipo) {
+    const cantidad = pokedex.filter(p => p.tipos.includes(tipo)).length;
+    filtros.appendChild(crearBotonFiltro(tipo, cantidad));
+  });
+}
+
+// Muestra la colección aplicando el filtro activo (reusa render de C09 sin cambiarlo)
+function mostrarColeccion() {
+  const hayTipo = pokedex.some(p => p.tipos.includes(tipoActivo));
+  if (tipoActivo !== "todos" && !hayTipo) {
+    tipoActivo = "todos";   // si quitaste el último de ese tipo, vuelve a "Todos"
+  }
+  renderFiltros();
+
+  const lista = tipoActivo === "todos"
+    ? pokedex
+    : pokedex.filter(p => p.tipos.includes(tipoActivo));
+  render(lista);
+}
 
 const buscador = document.getElementById("buscador");
 const boton = document.getElementById("btn-buscar");
@@ -112,7 +155,7 @@ async function cargarPokedex() {
     const nombres = ["bulbasaur", "charmander", "squirtle", "pikachu", "jigglypuff", "gengar"];
     const datos = await Promise.all(nombres.map(obtenerPokemon));   // varios en paralelo, con await
     pokedex = datos.map(adaptarPokemon);
-    render(pokedex);
+    mostrarColeccion();
   } catch (error) {
     mostrarError("No se pudo cargar la Pokédex.", cargarPokedex);
   } finally {
@@ -149,7 +192,7 @@ function capturar(pokemon) {
   if (!pokedex.some(p => p.nombre === pokemon.nombre)) {
     pokedex.push(pokemon);   // hace crecer tu colección
   }
-  render(pokedex);           // vuelve la colección completa, ya con el nuevo
+  mostrarColeccion();           // vuelve la colección completa, ya con el nuevo
   buscador.value = "";
 }
 
@@ -271,7 +314,7 @@ async function cargarMas() {
     });
 
     offset += 12;     // la próxima vez, la siguiente página (solo si todo salió bien)
-    render(pokedex);
+    mostrarColeccion();
   } catch (error) {
     mostrarError("No se pudieron cargar más Pokémon. Revisa tu conexión.", cargarMas);
   } finally {
