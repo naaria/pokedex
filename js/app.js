@@ -81,9 +81,14 @@ const spinner = document.getElementById("spinner");
 async function obtenerPokemon(idONombre) {
   const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${idONombre}`);
 
-  // HU2: fetch NO falla por un 404, hay que revisarlo con response.ok
-  if (!response.ok) {                                    // 404, 500, etc.
-    throw new Error(`No se encontró "${idONombre}"`);    // lanza un error propio
+  // Logro: "no existe" no es un fallo de la app → devolvemos null (resultado vacío)
+  if (response.status === 404) {
+    return null;
+  }
+
+  // HU2: fetch NO falla por un 404 ni un 500, hay que revisarlo con response.ok
+  if (!response.ok) {                                    // 500, 503, etc.
+    throw new Error(`La PokeAPI respondió con un error (${response.status}). Intenta de nuevo.`);
   }
 
   return response.json();
@@ -112,7 +117,22 @@ cargarPokedex();
 // Logro 1: la API también acepta números (/pokemon/25), así que sirve el mismo código
 async function buscarPokemon(nombre) {
   const data = await obtenerPokemon(nombre.toLowerCase());   // reusa obtenerPokemon de HU1
+  if (data === null) return null;                            // no existe: no hay nada que adaptar
   return adaptarPokemon(data);
+}
+
+// Aviso neutro (no es un error): la búsqueda funcionó, pero no hay resultado
+function mostrarNoEncontrado(nombre) {
+  const aviso = document.createElement("div");
+  aviso.className = "col-span-full bg-white rounded-xl shadow p-6 text-center text-slate-600";
+  const titulo = document.createElement("p");
+  titulo.className = "font-semibold text-slate-800";
+  titulo.textContent = `🔍 No se encontró "${nombre}"`;   // textContent: lo escrito no se interpreta como HTML
+  const ayuda = document.createElement("p");
+  ayuda.className = "text-sm mt-1";
+  ayuda.textContent = "Revisa cómo se escribe o prueba con su número (ej. 25).";
+  aviso.append(titulo, ayuda);
+  contenedor.replaceChildren(aviso);
 }
 
 // HU3: suma el Pokémon a la colección, sin duplicar
@@ -153,9 +173,16 @@ async function mostrarBusqueda(nombre) {
 
   try {
     const pokemon = await buscarPokemon(nombre);
-    mostrarResultado(pokemon);   // muestra la tarjeta con el botón Capturar (de C11)
+    if (pokemon === null) {
+      mostrarNoEncontrado(nombre);   // "no hay nada" → aviso neutro en #resultado
+    } else {
+      mostrarResultado(pokemon);     // muestra la tarjeta con el botón Capturar (de C11)
+    }
   } catch (error) {
-    mensaje.textContent = error.message;   // "No se encontró 'pikachuu'"
+    // "algo se rompió" (sin red, error del servidor) → mensaje de error en rojo
+    mensaje.textContent = error.message === "Failed to fetch"
+      ? "Algo salió mal. Revisa tu conexión."
+      : error.message;
     mensaje.classList.remove("hidden");
   } finally {
     spinner.classList.add("hidden");      // ✅ oculta carga SIEMPRE
