@@ -76,14 +76,7 @@ let pokedex = [];   // aquí guardamos la rejilla cargada
 const buscador = document.getElementById("buscador");
 const boton = document.getElementById("btn-buscar");
 const mensaje = document.getElementById("mensaje");
-
-// Logro 1: spinner animado mientras llegan los datos
-contenedor.innerHTML = `
-  <div class="col-span-full flex flex-col items-center gap-3 py-8 text-slate-500" role="status">
-    <div class="h-10 w-10 animate-spin rounded-full border-4 border-slate-300 border-t-yellow-400"></div>
-    <p>Cargando…</p>
-  </div>
-`;
+const spinner = document.getElementById("spinner");
 
 async function obtenerPokemon(idONombre) {
   const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${idONombre}`);
@@ -96,11 +89,21 @@ async function obtenerPokemon(idONombre) {
   return response.json();
 }
 
+// HU3: la carga inicial también puede fallar (sin red al abrir)
 async function cargarPokedex() {
-  const nombres = ["bulbasaur", "charmander", "squirtle", "pikachu", "jigglypuff", "gengar"];
-  const datos = await Promise.all(nombres.map(obtenerPokemon));   // varios en paralelo, con await
-  pokedex = datos.map(adaptarPokemon);
-  render(pokedex);
+  spinner.classList.remove("hidden");
+  mensaje.classList.add("hidden");
+  try {
+    const nombres = ["bulbasaur", "charmander", "squirtle", "pikachu", "jigglypuff", "gengar"];
+    const datos = await Promise.all(nombres.map(obtenerPokemon));   // varios en paralelo, con await
+    pokedex = datos.map(adaptarPokemon);
+    render(pokedex);
+  } catch (error) {
+    mensaje.textContent = "No se pudo cargar la Pokédex.";
+    mensaje.classList.remove("hidden");
+  } finally {
+    spinner.classList.add("hidden");   // corre SIEMPRE: con éxito o con error
+  }
 }
 
 cargarPokedex();
@@ -145,7 +148,8 @@ function mostrarResultado(pokemon) {
 
 // HU1: si la búsqueda falla, se muestra un mensaje y la app sigue viva
 async function mostrarBusqueda(nombre) {
-  mensaje.classList.add("hidden");   // limpia errores anteriores
+  spinner.classList.remove("hidden");   // ⏳ muestra carga
+  mensaje.classList.add("hidden");      // limpia errores anteriores
 
   try {
     const pokemon = await buscarPokemon(nombre);
@@ -153,6 +157,8 @@ async function mostrarBusqueda(nombre) {
   } catch (error) {
     mensaje.textContent = error.message;   // "No se encontró 'pikachuu'"
     mensaje.classList.remove("hidden");
+  } finally {
+    spinner.classList.add("hidden");      // ✅ oculta carga SIEMPRE
   }
 }
 
@@ -170,23 +176,35 @@ buscador.addEventListener("keydown", function (event) {
 let offset = 0;   // desde qué Pokémon empezamos
 
 async function cargarMas() {
-  // ?limit (cuántos) y ?offset (desde dónde) = parámetros de consulta
-  const respuesta = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=12&offset=${offset}`);
-  const lista = await respuesta.json();   // { results: [{ name, url }, ...] }
-
-  // cada item trae solo name + url → pide el detalle de cada uno en paralelo
-  const datos = await Promise.all(
-    lista.results.map(item => fetch(item.url).then(r => r.json()))
-  );
-
-  datos.map(adaptarPokemon).forEach(function (pokemon) {
-    if (!pokedex.some(p => p.nombre === pokemon.nombre)) {
-      pokedex.push(pokemon);   // sin duplicar
+  spinner.classList.remove("hidden");
+  mensaje.classList.add("hidden");
+  try {
+    // ?limit (cuántos) y ?offset (desde dónde) = parámetros de consulta
+    const respuesta = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=12&offset=${offset}`);
+    if (!respuesta.ok) {
+      throw new Error("No se pudieron cargar más Pokémon.");
     }
-  });
+    const lista = await respuesta.json();   // { results: [{ name, url }, ...] }
 
-  offset += 12;     // la próxima vez, la siguiente página
-  render(pokedex);
+    // cada item trae solo name + url → pide el detalle de cada uno en paralelo
+    const datos = await Promise.all(
+      lista.results.map(item => fetch(item.url).then(r => r.json()))
+    );
+
+    datos.map(adaptarPokemon).forEach(function (pokemon) {
+      if (!pokedex.some(p => p.nombre === pokemon.nombre)) {
+        pokedex.push(pokemon);   // sin duplicar
+      }
+    });
+
+    offset += 12;     // la próxima vez, la siguiente página (solo si todo salió bien)
+    render(pokedex);
+  } catch (error) {
+    mensaje.textContent = "No se pudieron cargar más Pokémon. Revisa tu conexión.";
+    mensaje.classList.remove("hidden");
+  } finally {
+    spinner.classList.add("hidden");
+  }
 }
 
 document.getElementById("cargar-mas").addEventListener("click", cargarMas);
