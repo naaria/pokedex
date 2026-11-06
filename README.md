@@ -93,7 +93,7 @@ Como entrenador, quiero filtrar mi Pokédex por tipo (fuego, agua, planta…) pa
 - **¿Por qué revisar `response.ok`?** `fetch` solo falla si no hay red. Un 404 o un 500 llegan como respuestas "exitosas", así que hay que revisarlas a mano y decidir qué hacer.
 - **"No encontrado" no es un error.** Ante un 404, `obtenerPokemon` devuelve `null` en vez de lanzar: la búsqueda funcionó, solo que no hay resultado. Así se separa "no hay nada" (aviso neutro) de "algo se rompió" (mensaje rojo con Reintentar).
 - **¿Por qué `finally`?** El spinner se oculta en `finally` porque ese bloque corre siempre, con éxito o con error. Si se ocultara al final del `try`, un error lo dejaría girando para siempre.
-- **Una función adaptadora.** `adaptarPokemon` traduce el JSON anidado de la API a `{ nombre, imagen, tipos, stats }`. Por eso `crearTarjeta` y `render` de C09 no cambiaron aunque la fuente de datos sí.
+- **Una función adaptadora.** `adaptarPokemon` traduce el JSON anidado de la API a `{ nombre, numero, imagen, tipos, stats }`. Por eso `crearTarjeta` y `render` de C09 no cambiaron aunque la fuente de datos sí.
 - **Texto del usuario con `textContent`.** Lo que se escribe en el buscador se muestra con `textContent`, así nunca se interpreta como HTML.
 - **Un commit por historia de usuario.** Cada lab se desarrolló en su rama (`lab10-api`, `lab11-async`, `lab12-errores`) y se integró a `main` con un Pull Request.
 
